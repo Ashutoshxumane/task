@@ -7,7 +7,7 @@ const router = express.Router();
 // ✅ Protected Route: Create User (Admin Only)
 router.post("/register", authenticate, authorizeRoles(["admin"]), createUser);
 
-// ✅ Protected Route: Get All Users (Admin Only)
-router.get("/", authenticate, authorizeRoles(["admin"]), getAllUsers);
+// ✅ Protected Route: Get Users (Admin can see all, Users can see only themselves)
+router.get("/", authenticate, authorizeRoles(["admin", "user"]), getAllUsers);
 
 module.exports = router;

@@ -8,11 +8,13 @@ import ResetPassword from "./pages/ResetPassword";
 import Dashboard from "./pages/Dashboard";
 import AdminDashboard from "./pages/AdminDashboard";
 import Settings from "./pages/Settings";
+import Config from "./pages/Config";
 import Users from "./pages/Users.js";
 import ProtectedRoute from "./components/ProtectedRoute";
 import AdminRoute from "./components/AdminRoute"; 
 import PublicRoute from "./components/PublicRoute";
-import ChangePassword from "./components/ChangePassword"; 
+import ChangePassword from "./components/ChangePassword";
+import MuiDashboardPage from "./pages/MuiDashboardPage";
 
 const NotFoundRedirect = () => {
   const user = JSON.parse(localStorage.getItem("user"));
@@ -34,16 +36,21 @@ function App() {
           <Route path="/reset-password/:token" element={<ResetPassword />} />
         </Route>
 
-{/* ✅ Protected Routes (Only for Logged-in Users) */}
+        {/* ✅ Protected Routes (Only for Logged-in Users) */}
         <Route element={<ProtectedRoute />}>
           <Route path="/dashboard" element={<Dashboard />} />
+          <Route path="/mui-dashboard" element={<MuiDashboardPage />} />
           <Route path="/change-password" element={<ChangePassword />} />
         </Route>
+
+        {/* Direct access for testing - remove in production */}
+        <Route path="/test-dashboard" element={<MuiDashboardPage />} />
 
         {/* ✅ Admin Routes */}
         <Route element={<AdminRoute />}>
           <Route path="/admin-dashboard" element={<AdminDashboard />} />
           <Route path="/settings" element={<Settings />} />
+          <Route path="/config" element={<Config />} />
           <Route path="/users" element={<Users />} />
         </Route>
 

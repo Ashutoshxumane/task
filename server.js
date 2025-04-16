@@ -7,7 +7,11 @@ const csrf = require("csurf");
 const dotenv = require("dotenv");
 const authRoutes = require("./routes/authRoutes");
 const userRoutes = require("./routes/userRoutes");
+const configRoutes = require("./routes/configRoutes");
 const { port } = require("./config/env");
+const { db } = require("./config/db");
+
+const taskRoutes = require("./routes/taskRoutes");
 
 // Load environment variables
 dotenv.config();
@@ -39,18 +43,29 @@ app.use(rateLimit({
 // ✅ Routes
 app.use("/api/auth", authRoutes);
 app.use("/api/users", userRoutes);
+app.use("/api/config", configRoutes);
+app.use("/api/tasks", taskRoutes);
 
 // ✅ Health Check Route
 app.get("/", (req, res) => res.json({ message: `🚀 Task Management API running in ${process.env.NODE_ENV} mode` }));
 
 // ✅ Global Error Handler
-app.use((err, req, res, next) => {
-    console.error("❌ Server Error:", err);
-    res.status(err.status || 500).json({ error: err.message || "Internal Server Error" });
-});
+
 
 // ✅ Start Server
-const server = app.listen(port, () => console.log(`🚀 Server running on port ${port} in ${process.env.NODE_ENV} mode`));
+const startServer = async () => {
+  try {
+    // Database connection is already tested in db.js
+    const server = app.listen(port, () => 
+      console.log(`🚀 Server running on port ${port} in ${process.env.NODE_ENV} mode`)
+    );
+    
+    // Export for testing
+    module.exports = { app, server };
+  } catch (error) {
+    console.error("❌ Failed to start server:", error);
+    process.exit(1);
+  }
+};
 
-// ✅ Export for testing
-module.exports = { app, server };
+startServer();

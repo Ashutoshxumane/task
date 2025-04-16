@@ -71,7 +71,10 @@ const createUser = async (req, res) => {
 // ✅ Fetch All Users (Admin Only)
 const getAllUsers = async (req, res) => {
     try {
-        const users = await db("employees")
+        // Get the current user's role and id from the request
+        const { role, id } = req.user;
+
+        let query = db("employees")
             .select(
                 "employees.id",
                 "employees.first_name",
@@ -86,8 +89,15 @@ const getAllUsers = async (req, res) => {
                 db.raw("CONCAT(manager.first_name, ' ', manager.last_name) as manager_name")
             )
             .leftJoin("departments", "employees.department", "departments.id")
-            .leftJoin("employees as manager", "employees.reporting_manager", "manager.id");
+            .leftJoin("employees as manager", "employees.reporting_manager", "manager.id")
+            .where("employees.status", "active");
 
+        // If user is not admin, only return their own data
+        if (role !== "admin") {
+            query = query.where("employees.id", id);
+        }
+
+        const users = await query;
         res.status(200).json(users);
     } catch (error) {
         console.error("Error fetching users:", error);

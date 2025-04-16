@@ -8,7 +8,7 @@ const { jwtSecret, refreshTokenSecret } = require("../config/env");
 const sendEmail = require("../utils/emailService");
 const {db} = require("../config/db"); // Database connection
 const loginLimiter = rateLimit({
-    windowMs: 15 * 60 * 1000, // 15 minutes
+    windowMs: 30 * 60 * 1000, // 15 minutes
     max: 5, // Max 5 login attempts per 15 minutes
     message: "Too many login attempts. Please try again later.",
 });
@@ -64,7 +64,7 @@ const login = async (req, res) => {
         const accessToken = jwt.sign(
             { id: employee.id, role: employee.role },
             jwtSecret,
-            { expiresIn: "15m" }
+            { expiresIn: "30m" }
         );
 
         const refreshToken = jwt.sign(
@@ -83,7 +83,7 @@ const login = async (req, res) => {
         await trx.commit();
 
         // 7️⃣ Send Tokens as HTTP-Only Cookies
-        res.cookie("accessToken", accessToken, { httpOnly: true, secure: true, sameSite: "Strict", maxAge: 15 * 60 * 1000 });
+        res.cookie("accessToken", accessToken, { httpOnly: true, secure: true, sameSite: "Strict", maxAge: 30 * 60 * 1000 });
         res.cookie("refreshToken", refreshToken, { httpOnly: true, secure: true, sameSite: "Strict", maxAge: 7 * 24 * 60 * 60 * 1000 });
 
         res.json({
@@ -156,7 +156,7 @@ const forgotPassword = async (req, res) => {
                     Reset Password
                 </a>
             </div>
-            <p style="color: #777;">This link is valid for <strong>5 minutes</strong>. If you didn’t request this, please ignore this email.</p>
+            <p style="color: #777;">This link is valid for <strong>5 minutes</strong>. If you didn't request this, please ignore this email.</p>
             <hr style="border: none; border-top: 1px solid #ddd;">
             <p style="text-align: center; color: #555;">Best regards, <br><strong>Xumane Team</strong></p>
         </div>
