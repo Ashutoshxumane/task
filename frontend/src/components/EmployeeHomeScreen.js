@@ -254,6 +254,8 @@ const EmployeeHomeScreen = () => {
     subType: "",
     hoursSpent: ""
   });
+  const [isEditing, setIsEditing] = useState(false);
+  const [editingTaskId, setEditingTaskId] = useState(null);
   const isMobile = useMediaQuery(theme.breakpoints.down('md'));
 
   const [dropdownOptions, setDropdownOptions] = useState({
@@ -572,8 +574,15 @@ console.log("currentuser",currentUser)
         date: dateRange[0].toISOString().split("T")[0]
       };
 
-      await apiClient.post("/tasks", taskData);
-      toast.success("Task added successfully");
+      if (isEditing) {
+        // Update existing task
+        await apiClient.put(`/tasks/${editingTaskId}`, taskData);
+        toast.success("Task updated successfully");
+      } else {
+        // Create new task
+        await apiClient.post("/tasks", taskData);
+        toast.success("Task added successfully");
+      }
       
       // Reset form
       setTaskForm({
@@ -587,13 +596,15 @@ console.log("currentuser",currentUser)
         hoursSpent: ""
       });
       setShowModal(false);
+      setIsEditing(false);
+      setEditingTaskId(null);
       
       // Refresh tasks
       fetchTasks();
       
     } catch (error) {
       console.error("Error saving task:", error);
-      toast.error(error.response?.data?.message || "Failed to save task");
+      toast.error(error.response?.data?.message || isEditing ? "Failed to update task" : "Failed to save task");
     }
   };
   
@@ -752,7 +763,20 @@ console.log("currentuser",currentUser)
   };
 
   const handleEditClick = (task) => {
-    // Implement edit functionality
+    console.log("Editing task:", task);
+    setTaskForm({
+      title: task.title || "",
+      details: task.details || "",
+      client: task.client_id?.toString() || "",
+      module: task.module_id?.toString() || "",
+      resource: task.resource_id?.toString() || "",
+      type: task.type_id?.toString() || "",
+      subType: task.subtype_id?.toString() || "",
+      hoursSpent: task.hours_spent?.toString() || ""
+    });
+    setIsEditing(true);
+    setEditingTaskId(task.id);
+    setShowModal(true);
   };
 
   const handleDeleteClick = (id) => {
@@ -774,6 +798,20 @@ console.log("currentuser",currentUser)
 
   // Update the modal show handler
   const handleShowModal = () => {
+    // Reset form when adding a new task
+    setTaskForm({
+      title: "",
+      details: "",
+      client: "",
+      module: "",
+      resource: "",
+      type: "",
+      subType: "",
+      hoursSpent: ""
+    });
+    setIsEditing(false);
+    setEditingTaskId(null);
+    
     // For regular users, automatically set the resource to themselves
     if (currentUser && currentUser.role !== "admin") {
       setTaskForm(prev => ({
@@ -1409,127 +1447,202 @@ console.log("currentuser",currentUser)
       </Box>
 
       {/* Task Form Modal */}
-      <Modal show={showModal} onHide={() => setShowModal(false)} centered>
-        <Modal.Header closeButton>
-          <Modal.Title>Add New Task</Modal.Title>
+      <Modal show={showModal} onHide={() => setShowModal(false)} centered size="lg" className="task-form-modal">
+        <Modal.Header closeButton style={{ 
+          background: theme.palette.primary.main, 
+          color: 'white', 
+          borderBottom: 'none',
+          padding: '15px 20px',
+        }}>
+          <div>
+            <Modal.Title style={{ fontWeight: '600', fontSize: '1.1rem' }}>{isEditing ? 'Edit Task' : 'Add New Task'}</Modal.Title>
+            <small style={{ opacity: 0.9, fontSize: '0.75rem' }}>
+              {isEditing ? 'Update task information as needed' : 'Fill in the details to create a new task'}
+            </small>
+          </div>
         </Modal.Header>
-        <Modal.Body>
+        <Modal.Body style={{ padding: '20px' }}>
           <Form>
-            <div className="row">
-              <div className="col-md-6">
-                <Form.Group className="mb-3">
-                  <Form.Label className="fw-bold small">Task Title <span className="text-danger">*</span></Form.Label>
+            <div className="row mb-3">
+              <div className="col-md-8">
+                <Form.Group>
+                  <Form.Label className="fw-semibold text-secondary small mb-1">Task Title <span className="text-danger">*</span></Form.Label>
                   <Form.Control
                     type="text"
                     name="title"
                     value={taskForm.title}
                     onChange={handleTaskFormChange}
-                    placeholder="Enter task title"
+                    placeholder="Enter a descriptive task title"
                     required
                     size="sm"
+                    style={{ 
+                      borderRadius: '4px', 
+                      padding: '10px', 
+                      fontWeight: '500', 
+                      fontSize: '0.9rem',
+                      borderColor: !taskForm.title && 'rgba(220, 53, 69, 0.3)'
+                    }}
                   />
+                  <Form.Text className="text-muted" style={{ fontSize: '0.7rem', marginLeft: '2px' }}>
+                    A clear, concise title helps identify the task
+                  </Form.Text>
                 </Form.Group>
               </div>
-              <div className="col-md-6">
-                <Form.Group className="mb-3">
-                  <Form.Label className="fw-bold small">Hours Spent <span className="text-danger">*</span></Form.Label>
+              <div className="col-md-4">
+                <Form.Group>
+                  <Form.Label className="fw-semibold text-secondary small mb-1">Hours Spent <span className="text-danger">*</span></Form.Label>
                   <Form.Control 
                     type="number" 
                     name="hoursSpent" 
                     value={taskForm.hoursSpent} 
                     onChange={handleTaskFormChange}
-                    placeholder="Enter hours spent"
+                    placeholder="Hours"
                     min="0.5"
                     step="0.5"
                     size="sm"
                     required
+                    style={{ 
+                      borderRadius: '4px', 
+                      padding: '10px', 
+                      fontWeight: '500', 
+                      fontSize: '0.9rem',
+                      borderColor: !taskForm.hoursSpent && 'rgba(220, 53, 69, 0.3)'
+                    }}
                   />
-            </Form.Group>
+                  <Form.Text className="text-muted" style={{ fontSize: '0.7rem', marginLeft: '2px' }}>
+                    Time spent on this task
+                  </Form.Text>
+                </Form.Group>
               </div>
             </div>
 
-            <Form.Group className="mb-3">
-              <Form.Label className="fw-bold small">Task Details</Form.Label>
+            <Form.Group className="mb-4">
+              <Form.Label className="fw-semibold text-secondary small mb-1">Task Details</Form.Label>
               <Form.Control
                 as="textarea"
                 name="details"
                 value={taskForm.details}
                 onChange={handleTaskFormChange}
-                placeholder="Enter task details"
-                rows={2}
+                placeholder="Enter additional details about this task"
+                rows={3}
                 size="sm"
+                style={{ 
+                  borderRadius: '4px', 
+                  padding: '10px', 
+                  fontSize: '0.9rem',
+                  resize: 'none',
+                  background: '#f9f9f9'
+                }}
               />
+              <Form.Text className="text-muted" style={{ fontSize: '0.7rem', marginLeft: '2px' }}>
+                Optional: Add any additional information about the task
+              </Form.Text>
             </Form.Group>
 
-            <div className="row">
+            <hr style={{ margin: '0 0 20px 0', opacity: 0.1 }} />
+            
+            <div className="row mb-3">
               <div className="col-md-6">
-                <Form.Group className="mb-3">
-                  <Form.Label className="fw-bold small">Client <span className="text-danger">*</span></Form.Label>
+                <Form.Group>
+                  <Form.Label className="fw-semibold text-secondary small mb-1">Client <span className="text-danger">*</span></Form.Label>
                   <Form.Select
                     name="client"
                     value={taskForm.client}
                     onChange={handleTaskFormChange}
-                    className={!taskForm.client ? "border-danger" : ""}
+                    className={!taskForm.client ? "is-invalid" : ""}
                     size="sm"
                     required
+                    style={{ 
+                      borderRadius: '4px', 
+                      padding: '10px', 
+                      fontSize: '0.9rem',
+                      fontWeight: '500',
+                      height: 'auto',
+                      borderColor: !taskForm.client && 'rgba(220, 53, 69, 0.3)'
+                    }}
                   >
-                <option value="">Select Client</option>
-                {dropdownOptions.clients.map((client) => (
-                  <option key={client.id} value={client.id}>{client.name}</option>
-                ))}
-              </Form.Select>
-            </Form.Group>
+                    <option value="">Select Client</option>
+                    {dropdownOptions.clients.map((client) => (
+                      <option key={client.id} value={client.id}>{client.name}</option>
+                    ))}
+                  </Form.Select>
+                </Form.Group>
               </div>
               <div className="col-md-6">
-                <Form.Group className="mb-3">
-                  <Form.Label className="fw-bold small">Module <span className="text-danger">*</span></Form.Label>
+                <Form.Group>
+                  <Form.Label className="fw-semibold text-secondary small mb-1">Module <span className="text-danger">*</span></Form.Label>
                   <Form.Select
                     name="module"
                     value={taskForm.module}
                     onChange={handleTaskFormChange}
-                    className={!taskForm.module ? "border-danger" : ""}
+                    className={!taskForm.module ? "is-invalid" : ""}
                     size="sm"
                     required
+                    style={{ 
+                      borderRadius: '4px', 
+                      padding: '10px', 
+                      fontSize: '0.9rem',
+                      fontWeight: '500',
+                      height: 'auto',
+                      borderColor: !taskForm.module && 'rgba(220, 53, 69, 0.3)'
+                    }}
                   >
-                <option value="">Select Module</option>
-                {dropdownOptions.modules.map((module) => (
-                  <option key={module.id} value={module.id}>{module.name}</option>
-                ))}
-              </Form.Select>
-            </Form.Group>
+                    <option value="">Select Module</option>
+                    {dropdownOptions.modules.map((module) => (
+                      <option key={module.id} value={module.id}>{module.name}</option>
+                    ))}
+                  </Form.Select>
+                </Form.Group>
               </div>
             </div>
 
-            <div className="row">
+            <div className="row mb-4">
               <div className="col-md-6">
-                <Form.Group className="mb-3">
-                  <Form.Label className="fw-bold small">Type <span className="text-danger">*</span></Form.Label>
+                <Form.Group>
+                  <Form.Label className="fw-semibold text-secondary small mb-1">Type <span className="text-danger">*</span></Form.Label>
                   <Form.Select
                     name="type"
                     value={taskForm.type}
                     onChange={handleTaskFormChange}
-                    className={!taskForm.type ? "border-danger" : ""}
+                    className={!taskForm.type ? "is-invalid" : ""}
                     size="sm"
                     required
+                    style={{ 
+                      borderRadius: '4px', 
+                      padding: '10px', 
+                      fontSize: '0.9rem',
+                      fontWeight: '500',
+                      height: 'auto',
+                      borderColor: !taskForm.type && 'rgba(220, 53, 69, 0.3)'
+                    }}
                   >
-                <option value="">Select Type</option>
-                {dropdownOptions.types.map((type) => (
-                  <option key={type.id} value={type.id}>{type.name}</option>
-                ))}
-              </Form.Select>
-            </Form.Group>
+                    <option value="">Select Type</option>
+                    {dropdownOptions.types.map((type) => (
+                      <option key={type.id} value={type.id}>{type.name}</option>
+                    ))}
+                  </Form.Select>
+                </Form.Group>
               </div>
               <div className="col-md-6">
-                <Form.Group className="mb-3">
-                  <Form.Label className="fw-bold small">Subtype <span className="text-danger">*</span></Form.Label>
-              <Form.Select
-                name="subType"
+                <Form.Group>
+                  <Form.Label className="fw-semibold text-secondary small mb-1">Subtype <span className="text-danger">*</span></Form.Label>
+                  <Form.Select
+                    name="subType"
                     value={taskForm.subType}
                     onChange={handleTaskFormChange}
                     disabled={!taskForm.type}
-                    className={!taskForm.subType ? "border-danger" : ""}
+                    className={!taskForm.subType && taskForm.type ? "is-invalid" : ""}
                     size="sm"
                     required
+                    style={{ 
+                      borderRadius: '4px', 
+                      padding: '10px', 
+                      fontSize: '0.9rem',
+                      fontWeight: '500',
+                      height: 'auto',
+                      backgroundColor: !taskForm.type ? '#f5f5f5' : 'white',
+                      borderColor: !taskForm.subType && taskForm.type && 'rgba(220, 53, 69, 0.3)'
+                    }}
                   >
                     <option value="">Select Subtype</option>
                     {dropdownOptions.subtypes
@@ -1544,32 +1657,79 @@ console.log("currentuser",currentUser)
               </div>
             </div>
 
-            <Form.Group className="mb-3">
-              <Form.Label className="fw-bold small">Resource <span className="text-danger">*</span></Form.Label>
+            <hr style={{ margin: '0 0 20px 0', opacity: 0.1 }} />
+
+            <Form.Group className="mb-1">
+              <Form.Label className="fw-semibold text-secondary small mb-1">Resource <span className="text-danger">*</span></Form.Label>
               <Form.Select 
                 name="resource" 
                 value={taskForm.resource} 
                 onChange={handleTaskFormChange}
-                className={!taskForm.resource ? "border-danger" : ""}
+                className={!taskForm.resource ? "is-invalid" : ""}
                 size="sm"
                 required
+                style={{ 
+                  borderRadius: '4px', 
+                  padding: '10px', 
+                  fontSize: '0.9rem',
+                  fontWeight: '500',
+                  height: 'auto',
+                  borderColor: !taskForm.resource && 'rgba(220, 53, 69, 0.3)'
+                }}
               >
                 <option value="">Select Resource</option>
                 {getFilteredUsers().map((user) => (
                   <option key={user.id} value={user.id}>
                     {user.first_name} {user.last_name}
                   </option>
-                  ))}
+                ))}
               </Form.Select>
+              <Form.Text className="text-muted" style={{ fontSize: '0.7rem', marginLeft: '2px' }}>
+                Person assigned to this task
+              </Form.Text>
             </Form.Group>
           </Form>
         </Modal.Body>
-        <Modal.Footer className="bg-light py-2">
-          <BootstrapButton variant="secondary" size="sm" onClick={() => setShowModal(false)}>
+        <Modal.Footer style={{ 
+          borderTop: '1px solid #eee', 
+          padding: '15px 20px', 
+          backgroundColor: '#f9f9f9',
+          borderBottomLeftRadius: '5px',
+          borderBottomRightRadius: '5px'
+        }}>
+          <BootstrapButton 
+            variant="light" 
+            size="sm" 
+            onClick={() => {
+              setShowModal(false);
+              setIsEditing(false);
+              setEditingTaskId(null);
+            }}
+            style={{
+              fontSize: '0.9rem',
+              padding: '8px 20px',
+              fontWeight: '500',
+              borderRadius: '4px',
+              border: '1px solid #ddd'
+            }}
+          >
             Cancel
           </BootstrapButton>
-          <BootstrapButton variant="primary" size="sm" onClick={handleSaveTask}>
-            Save Task
+          <BootstrapButton 
+            variant="primary" 
+            size="sm" 
+            onClick={handleSaveTask}
+            style={{
+              fontSize: '0.9rem',
+              padding: '8px 25px',
+              fontWeight: '600',
+              borderRadius: '4px',
+              backgroundColor: theme.palette.primary.main,
+              border: 'none',
+              boxShadow: '0 2px 4px rgba(0,0,0,0.1)'
+            }}
+          >
+            {isEditing ? 'Update Task' : 'Save Task'}
           </BootstrapButton>
         </Modal.Footer>
       </Modal>
