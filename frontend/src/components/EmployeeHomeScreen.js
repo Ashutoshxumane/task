@@ -256,6 +256,7 @@ const EmployeeHomeScreen = () => {
   });
   const [isEditing, setIsEditing] = useState(false);
   const [editingTaskId, setEditingTaskId] = useState(null);
+  const [titleError, setTitleError] = useState("");
   const isMobile = useMediaQuery(theme.breakpoints.down('md'));
 
   const [dropdownOptions, setDropdownOptions] = useState({
@@ -286,6 +287,10 @@ console.log("currentuser",currentUser)
     subtype: '',
     resource: ''
   });
+
+  // Constants for validation
+  const MAX_TITLE_LENGTH = 20; // Maximum characters allowed for title
+  const TITLE_WARNING_THRESHOLD = 15; // Warning threshold
 
   // Define fetchDropdownOptions properly inside the component
   const fetchDropdownOptions = async () => {
@@ -515,6 +520,19 @@ console.log("currentuser",currentUser)
 
   const handleTaskFormChange = (e) => {
     const { name, value } = e.target;
+    
+    // Special handling for title field to check length
+    if (name === "title") {
+      // Check for title length and set appropriate error message
+      if (value.length > MAX_TITLE_LENGTH) {
+        setTitleError(`Title is too long (max ${MAX_TITLE_LENGTH} characters)`);
+      } else if (value.length >= TITLE_WARNING_THRESHOLD) {
+        setTitleError(`Title is approaching the limit (${value.length}/${MAX_TITLE_LENGTH})`);
+      } else {
+        setTitleError("");
+      }
+    }
+    
     setTaskForm({ ...taskForm, [name]: value });
 
     if (name === "type") {
@@ -531,6 +549,10 @@ console.log("currentuser",currentUser)
       
       if (!taskForm.title.trim()) {
         errors.push("Task title is required");
+      }
+      
+      if (taskForm.title.length > MAX_TITLE_LENGTH) {
+        errors.push(`Title cannot exceed ${MAX_TITLE_LENGTH} characters`);
       }
       
       if (!taskForm.client) {
@@ -600,7 +622,7 @@ console.log("currentuser",currentUser)
       setEditingTaskId(null);
       
       // Refresh tasks
-      fetchTasks();
+    fetchTasks();
       
     } catch (error) {
       console.error("Error saving task:", error);
@@ -959,7 +981,7 @@ console.log("currentuser",currentUser)
                 </Typography>
               </Box>
             </CardContent>
-          </Card>
+      </Card>
         </Grid>
         <Grid item xs={4} sm={3} md={2.5}>
           <Card elevation={0} sx={{ 
@@ -1452,7 +1474,7 @@ console.log("currentuser",currentUser)
           background: theme.palette.primary.main, 
           color: 'white', 
           borderBottom: 'none',
-          padding: '15px 20px',
+          padding: '12px 20px',
         }}>
           <div>
             <Modal.Title style={{ fontWeight: '600', fontSize: '1.1rem' }}>{isEditing ? 'Edit Task' : 'Add New Task'}</Modal.Title>
@@ -1461,31 +1483,62 @@ console.log("currentuser",currentUser)
             </small>
           </div>
         </Modal.Header>
-        <Modal.Body style={{ padding: '20px' }}>
+        <Modal.Body style={{ padding: '15px' }}>
           <Form>
-            <div className="row mb-3">
+            <div className="row g-2 mb-2">
               <div className="col-md-8">
                 <Form.Group>
                   <Form.Label className="fw-semibold text-secondary small mb-1">Task Title <span className="text-danger">*</span></Form.Label>
-                  <Form.Control
-                    type="text"
-                    name="title"
-                    value={taskForm.title}
-                    onChange={handleTaskFormChange}
-                    placeholder="Enter a descriptive task title"
-                    required
-                    size="sm"
-                    style={{ 
-                      borderRadius: '4px', 
-                      padding: '10px', 
-                      fontWeight: '500', 
-                      fontSize: '0.9rem',
-                      borderColor: !taskForm.title && 'rgba(220, 53, 69, 0.3)'
-                    }}
-                  />
-                  <Form.Text className="text-muted" style={{ fontSize: '0.7rem', marginLeft: '2px' }}>
-                    A clear, concise title helps identify the task
-                  </Form.Text>
+                  <div className="position-relative">
+                    <Form.Control
+                      type="text"
+                      name="title"
+                      value={taskForm.title}
+                      onChange={handleTaskFormChange}
+                      placeholder="Brief task title (max 20 chars)"
+                      required
+                      size="sm"
+                      style={{ 
+                        borderRadius: '4px', 
+                        padding: '8px', 
+                        fontWeight: '500', 
+                        fontSize: '0.85rem',
+                        borderColor: titleError ? 
+                          (taskForm.title.length > MAX_TITLE_LENGTH ? 'rgba(220, 53, 69, 0.6)' : 'rgba(255, 193, 7, 0.6)') 
+                          : (!taskForm.title && 'rgba(220, 53, 69, 0.3)')
+                      }}
+                      maxLength={MAX_TITLE_LENGTH + 5} // Allow typing a bit more to see the error
+                    />
+                    <div className="d-flex justify-content-between align-items-center mt-1">
+                      <Form.Text 
+                        className={titleError ? 
+                          (taskForm.title.length > MAX_TITLE_LENGTH ? "text-danger" : "text-warning") 
+                          : "text-muted"} 
+                        style={{ 
+                          fontSize: '0.7rem', 
+                          marginLeft: '2px',
+                          fontWeight: titleError ? '500' : 'normal'
+                        }}
+                      >
+                        {titleError || "Short, concise title (max 20 chars)"}
+                      </Form.Text>
+                      <small 
+                        className={
+                          taskForm.title.length > MAX_TITLE_LENGTH 
+                            ? "text-danger" 
+                            : taskForm.title.length >= TITLE_WARNING_THRESHOLD 
+                              ? "text-warning" 
+                              : "text-muted"
+                        }
+                        style={{ 
+                          fontSize: '0.7rem', 
+                          fontWeight: taskForm.title.length >= TITLE_WARNING_THRESHOLD ? '500' : 'normal'
+                        }}
+                      >
+                        {taskForm.title.length}/{MAX_TITLE_LENGTH}
+                      </small>
+                    </div>
+                  </div>
                 </Form.Group>
               </div>
               <div className="col-md-4">
@@ -1503,9 +1556,9 @@ console.log("currentuser",currentUser)
                     required
                     style={{ 
                       borderRadius: '4px', 
-                      padding: '10px', 
+                      padding: '8px', 
                       fontWeight: '500', 
-                      fontSize: '0.9rem',
+                      fontSize: '0.85rem',
                       borderColor: !taskForm.hoursSpent && 'rgba(220, 53, 69, 0.3)'
                     }}
                   />
@@ -1516,7 +1569,7 @@ console.log("currentuser",currentUser)
               </div>
             </div>
 
-            <Form.Group className="mb-4">
+            <Form.Group className="mb-2">
               <Form.Label className="fw-semibold text-secondary small mb-1">Task Details</Form.Label>
               <Form.Control
                 as="textarea"
@@ -1524,12 +1577,12 @@ console.log("currentuser",currentUser)
                 value={taskForm.details}
                 onChange={handleTaskFormChange}
                 placeholder="Enter additional details about this task"
-                rows={3}
+                rows={2}
                 size="sm"
                 style={{ 
                   borderRadius: '4px', 
-                  padding: '10px', 
-                  fontSize: '0.9rem',
+                  padding: '8px', 
+                  fontSize: '0.85rem',
                   resize: 'none',
                   background: '#f9f9f9'
                 }}
@@ -1539,9 +1592,7 @@ console.log("currentuser",currentUser)
               </Form.Text>
             </Form.Group>
 
-            <hr style={{ margin: '0 0 20px 0', opacity: 0.1 }} />
-            
-            <div className="row mb-3">
+            <div className="row g-2 mb-2">
               <div className="col-md-6">
                 <Form.Group>
                   <Form.Label className="fw-semibold text-secondary small mb-1">Client <span className="text-danger">*</span></Form.Label>
@@ -1554,8 +1605,8 @@ console.log("currentuser",currentUser)
                     required
                     style={{ 
                       borderRadius: '4px', 
-                      padding: '10px', 
-                      fontSize: '0.9rem',
+                      padding: '8px', 
+                      fontSize: '0.85rem',
                       fontWeight: '500',
                       height: 'auto',
                       borderColor: !taskForm.client && 'rgba(220, 53, 69, 0.3)'
@@ -1580,8 +1631,8 @@ console.log("currentuser",currentUser)
                     required
                     style={{ 
                       borderRadius: '4px', 
-                      padding: '10px', 
-                      fontSize: '0.9rem',
+                      padding: '8px', 
+                      fontSize: '0.85rem',
                       fontWeight: '500',
                       height: 'auto',
                       borderColor: !taskForm.module && 'rgba(220, 53, 69, 0.3)'
@@ -1596,7 +1647,7 @@ console.log("currentuser",currentUser)
               </div>
             </div>
 
-            <div className="row mb-4">
+            <div className="row g-2 mb-2">
               <div className="col-md-6">
                 <Form.Group>
                   <Form.Label className="fw-semibold text-secondary small mb-1">Type <span className="text-danger">*</span></Form.Label>
@@ -1609,8 +1660,8 @@ console.log("currentuser",currentUser)
                     required
                     style={{ 
                       borderRadius: '4px', 
-                      padding: '10px', 
-                      fontSize: '0.9rem',
+                      padding: '8px', 
+                      fontSize: '0.85rem',
                       fontWeight: '500',
                       height: 'auto',
                       borderColor: !taskForm.type && 'rgba(220, 53, 69, 0.3)'
@@ -1636,8 +1687,8 @@ console.log("currentuser",currentUser)
                     required
                     style={{ 
                       borderRadius: '4px', 
-                      padding: '10px', 
-                      fontSize: '0.9rem',
+                      padding: '8px', 
+                      fontSize: '0.85rem',
                       fontWeight: '500',
                       height: 'auto',
                       backgroundColor: !taskForm.type ? '#f5f5f5' : 'white',
@@ -1657,9 +1708,7 @@ console.log("currentuser",currentUser)
               </div>
             </div>
 
-            <hr style={{ margin: '0 0 20px 0', opacity: 0.1 }} />
-
-            <Form.Group className="mb-1">
+            <Form.Group>
               <Form.Label className="fw-semibold text-secondary small mb-1">Resource <span className="text-danger">*</span></Form.Label>
               <Form.Select 
                 name="resource" 
@@ -1670,8 +1719,8 @@ console.log("currentuser",currentUser)
                 required
                 style={{ 
                   borderRadius: '4px', 
-                  padding: '10px', 
-                  fontSize: '0.9rem',
+                  padding: '8px', 
+                  fontSize: '0.85rem',
                   fontWeight: '500',
                   height: 'auto',
                   borderColor: !taskForm.resource && 'rgba(220, 53, 69, 0.3)'
@@ -1692,7 +1741,7 @@ console.log("currentuser",currentUser)
         </Modal.Body>
         <Modal.Footer style={{ 
           borderTop: '1px solid #eee', 
-          padding: '15px 20px', 
+          padding: '12px 20px', 
           backgroundColor: '#f9f9f9',
           borderBottomLeftRadius: '5px',
           borderBottomRightRadius: '5px'
@@ -1706,8 +1755,8 @@ console.log("currentuser",currentUser)
               setEditingTaskId(null);
             }}
             style={{
-              fontSize: '0.9rem',
-              padding: '8px 20px',
+              fontSize: '0.85rem',
+              padding: '6px 15px',
               fontWeight: '500',
               borderRadius: '4px',
               border: '1px solid #ddd'
@@ -1720,8 +1769,8 @@ console.log("currentuser",currentUser)
             size="sm" 
             onClick={handleSaveTask}
             style={{
-              fontSize: '0.9rem',
-              padding: '8px 25px',
+              fontSize: '0.85rem',
+              padding: '6px 18px',
               fontWeight: '600',
               borderRadius: '4px',
               backgroundColor: theme.palette.primary.main,
