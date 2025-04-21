@@ -285,7 +285,8 @@ console.log("currentuser",currentUser)
     module: '',
     type: '',
     subtype: '',
-    resource: ''
+    resource: '',
+    date: ''
   });
 
   // Constants for validation
@@ -455,22 +456,39 @@ console.log("currentuser",currentUser)
       );
     }
     
+    if (columnFilters.date) {
+      const filterValue = columnFilters.date.toLowerCase();
+      filtered = filtered.filter(task => 
+        task.created_at?.toLowerCase().includes(filterValue)
+      );
+    }
+    
     setFilteredTasks(filtered);
   }, [tasks, searchTerm, selectedPriority, columnFilters]);
+
+  const formatDate = (dateString) => {
+    if (!dateString) return "N/A";
+    
+    try {
+      const date = new Date(dateString);
+      if (isNaN(date.getTime())) return "Invalid Date";
+      
+      return date.toLocaleDateString('en-US', {
+        year: 'numeric',
+        month: 'short',
+        day: 'numeric'
+      });
+    } catch (error) {
+      console.error("Error formatting date:", error);
+      return "Error";
+    }
+  };
 
   const getGreeting = () => {
     const hour = new Date().getHours();
     if (hour < 12) return "Good Morning";
     if (hour < 18) return "Good Afternoon";
     return "Good Evening";
-  };
-
-  const formatDate = (dateString) => {
-    return new Date(dateString).toLocaleDateString('en-US', {
-      year: 'numeric',
-      month: 'short',
-      day: 'numeric'
-    });
   };
 
   const handleDateRangeSelect = (start, end) => {
@@ -514,7 +532,8 @@ console.log("currentuser",currentUser)
       module: '',
       type: '',
       subtype: '',
-      resource: ''
+      resource: '',
+      date: ''
     });
   };
 
@@ -1066,7 +1085,7 @@ console.log("currentuser",currentUser)
 
             {/* Add clear filters button */}
             {(columnFilters.task || columnFilters.client || columnFilters.module || 
-              columnFilters.type || columnFilters.subtype || columnFilters.resource) && (
+              columnFilters.type || columnFilters.subtype || columnFilters.resource || columnFilters.date) && (
               <Button
                 variant="outlined"
                 size="small"
@@ -1140,6 +1159,7 @@ console.log("currentuser",currentUser)
                   <TableCell sx={{ fontWeight: 'bold' }}>Type</TableCell>
                   <TableCell sx={{ fontWeight: 'bold' }}>Subtype</TableCell>
                   <TableCell sx={{ fontWeight: 'bold' }}>Resource</TableCell>
+                  <TableCell sx={{ fontWeight: 'bold' }}>Date</TableCell>
                   <TableCell sx={{ fontWeight: 'bold', width: '100px' }}>Actions</TableCell>
                 </TableRow>
                 <TableRow>
@@ -1323,6 +1343,36 @@ console.log("currentuser",currentUser)
                       }}
                     />
                   </TableCell>
+                  <TableCell>
+                    <TextField
+                      variant="outlined"
+                      placeholder="Search date"
+                      size="small"
+                      fullWidth
+                      InputProps={{
+                        startAdornment: (
+                          <InputAdornment position="start">
+                            <SearchIcon fontSize="small" sx={{ fontSize: '0.8rem' }} />
+                          </InputAdornment>
+                        ),
+                        style: { fontSize: '0.65rem', padding: '0px 4px', height: '28px' }
+                      }}
+                      onChange={(e) => handleColumnFilterChange('date', e.target.value)}
+                      value={columnFilters.date || ''}
+                      sx={{
+                        '& .MuiOutlinedInput-root': {
+                          '& fieldset': { borderColor: columnFilters.date ? 'primary.main' : 'rgba(0,0,0,0.12)' },
+                          '&:hover fieldset': { borderColor: 'rgba(0,0,0,0.3)' },
+                          '&.Mui-focused fieldset': { borderColor: 'primary.main' },
+                          bgcolor: columnFilters.date ? 'rgba(25, 118, 210, 0.04)' : 'transparent',
+                          height: '28px',
+                        },
+                        '& .MuiInputBase-input': {
+                          padding: '4px 8px 4px 0',
+                        }
+                      }}
+                    />
+                  </TableCell>
                   <TableCell></TableCell>
                 </TableRow>
               </TableHead>
@@ -1409,6 +1459,19 @@ console.log("currentuser",currentUser)
                       <Typography variant="body2">
                         {task.resource_name || (task.first_name && task.last_name ? `${task.first_name} ${task.last_name}` : "N/A")}
                       </Typography>
+                    </TableCell>
+                    <TableCell>
+                      <Chip
+                        label={task.created_at ? formatDate(task.created_at) : "N/A"}
+                        size="small"
+                        sx={{
+                          bgcolor: 'rgba(158, 158, 158, 0.1)',
+                          color: 'text.secondary',
+                          fontWeight: 500,
+                          fontSize: '0.7rem',
+                          border: '1px solid rgba(158, 158, 158, 0.2)'
+                        }}
+                      />
                     </TableCell>
                     <TableCell>
                       <Box sx={{ display: 'flex' }}>

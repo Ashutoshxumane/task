@@ -29,7 +29,8 @@ import {
   People as PeopleIcon,
   Build as BuildIcon,
   Home as HomeIcon,
-  Logout as LogoutIcon
+  Logout as LogoutIcon,
+  ViewList as BacklogIcon
 } from '@mui/icons-material';
 
 import logo from '../assets/logo.png'; // Using the existing logo
@@ -431,6 +432,45 @@ const Layout = ({ children }) => {
                   fontSize: '0.75rem',
                   noWrap: true,
                   fontWeight: location.pathname === '/dashboard' ? 600 : 400,
+                  overflow: 'hidden',
+                  textOverflow: 'ellipsis'
+                }} 
+                sx={{ opacity: open ? 1 : 0 }}
+              />
+            </ListItemButton>
+            
+            <ListItemButton 
+              component={Link} 
+              to="/backlog" 
+              selected={location.pathname === '/backlog'} 
+              dense 
+              sx={{ 
+                py: 0.75, 
+                px: open ? 1.5 : 0,
+                minHeight: '36px',
+                borderRadius: open ? '0 8px 8px 0' : 0,
+                mr: open ? 0.5 : 0,
+                ...(location.pathname === '/backlog' && {
+                  bgcolor: 'rgba(25, 118, 210, 0.12)',
+                  '&:hover': {
+                    bgcolor: 'rgba(25, 118, 210, 0.15)',
+                  }
+                })
+              }}
+            >
+              <ListItemIcon sx={{ 
+                minWidth: open ? 32 : 48,
+                display: 'flex', 
+                justifyContent: 'center' 
+              }}>
+                <BacklogIcon color={location.pathname === '/backlog' ? 'primary' : 'inherit'} fontSize="small" />
+              </ListItemIcon>
+              <ListItemText 
+                primary="Backlog" 
+                primaryTypographyProps={{ 
+                  fontSize: '0.75rem',
+                  noWrap: true,
+                  fontWeight: location.pathname === '/backlog' ? 600 : 400,
                   overflow: 'hidden',
                   textOverflow: 'ellipsis'
                 }} 

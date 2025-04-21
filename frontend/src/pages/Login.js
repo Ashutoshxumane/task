@@ -35,7 +35,7 @@ const Login = () => {
       if (mustChangePassword === 1) {
         navigate("/change-password"); // 🔒 Force password change for first-time login
       } else if (role === "admin") {
-        navigate("/admin-dashboard"); // ✅ Redirects Admins
+        navigate("/dashboard"); // ✅ Redirects Admins
       } else {
         navigate("/dashboard"); // ✅ Redirects Regular Users
       }

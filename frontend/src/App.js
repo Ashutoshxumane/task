@@ -10,6 +10,7 @@ import AdminDashboard from "./pages/AdminDashboard";
 import Settings from "./pages/Settings";
 import Config from "./pages/Config";
 import Users from "./pages/Users.js";
+import Backlog from "./pages/Backlog";
 import ProtectedRoute from "./components/ProtectedRoute";
 import AdminRoute from "./components/AdminRoute"; 
 import PublicRoute from "./components/PublicRoute";
@@ -41,10 +42,12 @@ function App() {
           <Route path="/dashboard" element={<Dashboard />} />
           <Route path="/mui-dashboard" element={<MuiDashboardPage />} />
           <Route path="/change-password" element={<ChangePassword />} />
+          <Route path="/backlog" element={<Backlog />} />
         </Route>
 
         {/* Direct access for testing - remove in production */}
         <Route path="/test-dashboard" element={<MuiDashboardPage />} />
+        <Route path="/test-backlog" element={<Backlog />} />
 
         {/* ✅ Admin Routes */}
         <Route element={<AdminRoute />}>
